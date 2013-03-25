@@ -30,18 +30,19 @@ Ext.define('BSBExt.view.MainViewport', {
                   {
                     type: 'down',
                     handler: function(event, target, owner, tool){
-                      owner.ownerCt.update("<iframe src='"+owner.ownerCt.storyURL+ "' " +
-                       "width='"+ owner.ownerCt.getWidth() + "' height='700'></iframe>")
+                      me.loadInIframe(owner.ownerCt)
+/*                      owner.ownerCt.update("<iframe src='"+owner.ownerCt.storyURL+ "' " +
+                       "width='"+ owner.ownerCt.getWidth() + "' height='700'></iframe>")*/
                       // owner.ownerCt.ownerCt.body.scrollTo('top',owner.ownerCt.storyIndex * owner.getHeight(), true);
                     },
-                    qtip: "Open Story In Frame"
+                    qtip: "Open Story In Frame (i)"
                   },
                   {
                     type: 'gear',
                     handler: function(event, target, owner, tool){
-                      owner.ownerCt.update(owner.ownerCt.storyContent)
+                      loadOriginal(owner.ownerCt)
                     },
-                    qtip: "Normal View"
+                    qtip: "Normal View (o)"
                   },
                   {
                     type: 'pin',
@@ -66,6 +67,20 @@ Ext.define('BSBExt.view.MainViewport', {
       return Ext.getCmp("Story").child("[collapsed=false]")
     },
 
+    changeShowType: function(type){
+      this.showType = type;
+    },
+
+    loadInIframe: function(story){
+      story.update("<iframe src='"+story.storyURL+ "' " +
+                       "width='"+ story.getWidth() + "' height='700'></iframe>")
+                      // owner.ownerCt.ownerCt.body.scrollTo('top',owner.ownerCt.storyIndex * owner.getHeight(), true);
+    },
+
+    loadOriginal: function(story){
+      story.update(story.storyContent)
+    },
+
     markUnread: function(storyURL, story){
       var me = this;
       Ext.Ajax.request({
@@ -78,15 +93,6 @@ Ext.define('BSBExt.view.MainViewport', {
             // me.getActiveStory().header.body.dom.parentElement.style.backgroundColor = 'red'
             // me.getActiveStory().header.body.dom.parentElement.style.backgroundImage = 'none'
             story.header.body.setStyle('background-color','#abc7ec');
-            // me.getActiveStory().header.body.setStyle('box-shadow','blue');
-            // me.getActiveStory().header.body.setStyle('shadow','blue');
-            // me.getActiveStory().header.body.setStyle('border-color','blue');
-            // me.getActiveStory().header.getEl().applyStyles('box-shadow: red');
-            // me.getActiveStory().header.getEl().applyStyles('border-color: red');
-            // me.getActiveStory().header.getEl().applyStyles('background-image: none');
-              /*var text = response.responseText;
-              var obj = Ext.decode(text);
-              me.storeObj.loadRawData(obj, false)*/
           }
       });
     },
@@ -150,6 +156,9 @@ Ext.define('BSBExt.view.MainViewport', {
       this.currentFeed = ""
       Ext.Ajax.request({
         url: 'get_all_stories',
+        params: {
+          type: me.showType
+        },
         method: 'GET',
         success: function(response){
             var text = response.responseText;
@@ -172,7 +181,8 @@ Ext.define('BSBExt.view.MainViewport', {
         method: 'GET',
         params: {
           storyUrl: Ext.getCmp("Story").items.items[Ext.getCmp("Story").items.length-1].storyURL,
-          feedUrl: me.currentFeed
+          feedUrl: me.currentFeed,
+          type: me.showType
         },
         success: function(response){
             var text = response.responseText;
@@ -191,10 +201,11 @@ Ext.define('BSBExt.view.MainViewport', {
 
         var feedStore = Ext.create('Ext.data.JsonStore', {
             storeId:'feedStore',
-            fields:['name', 'url'],
+            fields:['name', 'unread', 'url'],
 
             data:{'items':[
                 { 'name': 'BSB Loading Feeds'  },
+                { 'unread': 5 },
                 { 'url': 'BSB.com'  },
             ]},
 
@@ -259,17 +270,23 @@ Ext.define('BSBExt.view.MainViewport', {
                 type: 'gear',
                 handler: function(){
                   me.loadAllFeeds();
-                }
+                },
+                qtip: "All Feeds"
               }
               ],
               columns: [
-                  {
-                      xtype: 'gridcolumn',
-                      width: 186,
-                      dataIndex: 'name',
-                      text: 'Name',
-
-                  }
+                {
+                    xtype: 'gridcolumn',
+                    width: 145,
+                    dataIndex: 'name',
+                    text: 'Name',
+                },
+                {
+                  xtype: 'gridcolumn',
+                  width: 45,
+                  dataIndex: 'unread',
+                  text: 'Unread',
+                }
               ],
               listeners: {
                 itemclick: function( grid, record, item, index, e, eOpts) {
@@ -281,7 +298,8 @@ Ext.define('BSBExt.view.MainViewport', {
                     method: 'GET',
                     params: {
                       // url: record.get("url")
-                      url: me.currentFeed
+                      url: me.currentFeed,
+                      type: me.showType
                     },
                     success: function(response){
                       var text = response.responseText;
@@ -308,27 +326,30 @@ Ext.define('BSBExt.view.MainViewport', {
               }
             },
             {
-                    xtype: 'cycle',
-                    x: 0,
-                    y: 610,
-                    width: 80,
-                    height: 30,
-                    showText: true,
-                    menu: {
-                        xtype: 'menu',
-                        width: 60,
-                        items: [
-                            {
-                                xtype: 'menucheckitem',
-                                text: 'All',
-                            },
-                            {
-                                xtype: 'menucheckitem',
-                                text: 'New',
-                            }
-                        ]
-                    }
-                }
+              xtype: 'cycle',
+              x: 0,
+              y: 610,
+              width: 80,
+              height: 30,
+              showText: true,
+              menu: {
+                  xtype: 'menu',
+                  width: 60,
+                  items: [
+                      {
+                          xtype: 'menucheckitem',
+                          text: 'All',
+                      },
+                      {
+                          xtype: 'menucheckitem',
+                          text: 'New',
+                      }
+                  ]
+              },
+              changeHandler: function(cycleBtn, activeItem) {
+                  me.changeShowType(activeItem.text);
+              }
+          }
           ]
       });
 
@@ -340,13 +361,44 @@ Ext.define('BSBExt.view.MainViewport', {
             fn: function(){
               me.nextStory()
             }
-          },{
+          },
+          {
             key: 'k',
             fn: function(){
               // console.log('prev')
               me.prevStory()
             }
+          },
+          {
+            key: 'm',
+            fn: function(){
+              // console.log('prev')
+              me.markUnread(me.getActiveStory().storyURL, me.getActiveStory())
+            }
+          },
+          {
+            key: 'n',
+            fn: function(){
+              // console.log('prev')
+              me.markUnread(me.getActiveStory().storyURL, me.getActiveStory())
+              me.nextStory()
+            }
+          },
+          {
+            key: 'i',
+            fn: function(){
+              // console.log(Ext.getCmp('openFrame').handler)
+              me.loadInIframe(me.getActiveStory())
+            }
+          },
+          {
+            key: 'o',
+            fn: function(){
+              // console.log(Ext.getCmp('openFrame').handler)
+              me.loadOriginal(me.getActiveStory())
+            }
           }
+
           ]
       });
 
