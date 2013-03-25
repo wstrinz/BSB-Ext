@@ -13,6 +13,18 @@
  * Do NOT hand edit this file.
  */
 
+Ext.Ajax.on('beforerequest', function(connection, options) {
+  var token = Ext.select("meta[name='csrf-token']").elements[0];
+
+  if (token !== null) {
+    options.headers = Ext.apply({
+      'Accept'       : 'application/json',
+      'X-CSRF-Token' : token.getAttribute('content')
+    }, options.headers || {});
+  }
+
+});
+
 Ext.Loader.setConfig({
     enabled: true
 });

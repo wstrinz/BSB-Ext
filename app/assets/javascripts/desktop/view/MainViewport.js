@@ -6,6 +6,7 @@ Ext.define('BSBExt.view.MainViewport', {
     },
 
     addStory: function(title, source, published, author, content, url, index) {
+      var me = this
       var titleString = "<b>"+title+"</b>" + " - " + (this.currentFeed == "" ? source + " - " : "" )  + published
       var contentString = "<p><font size='4'>"+title+"</font></h3></p> <p><b>"+author+"</b></p>"+content
       var newStory = Ext.create('Ext.panel.Panel', {
@@ -41,6 +42,12 @@ Ext.define('BSBExt.view.MainViewport', {
                       owner.ownerCt.update(owner.ownerCt.storyContent)
                     },
                     qtip: "Normal View"
+                  },
+                  {
+                    type: 'pin',
+                    handler: function(event, target, owner, tool){
+                      me.markUnread(owner.ownerCt.storyURL, owner.ownerCt)
+                    },
                   }
                ],
                listeners: {
@@ -48,10 +55,56 @@ Ext.define('BSBExt.view.MainViewport', {
                   var height = this.header.getHeight();
                   var index = Ext.getCmp("Story").items.items.indexOf(this)
                   this.ownerCt.body.scrollTo('top',index * (height), true)
+                  me.markRead(this.storyURL, this)
                 }
                }
           });
         Ext.getCmp("Story").add(newStory);
+    },
+
+    getActiveStory: function(){
+      return Ext.getCmp("Story").child("[collapsed=false]")
+    },
+
+    markUnread: function(storyURL, story){
+      var me = this;
+      Ext.Ajax.request({
+          url: 'mark_unread',
+          params: {
+            url: storyURL
+          },
+          success: function(response){
+            console.log()
+            // me.getActiveStory().header.body.dom.parentElement.style.backgroundColor = 'red'
+            // me.getActiveStory().header.body.dom.parentElement.style.backgroundImage = 'none'
+            story.header.body.setStyle('background-color','#abc7ec');
+            // me.getActiveStory().header.body.setStyle('box-shadow','blue');
+            // me.getActiveStory().header.body.setStyle('shadow','blue');
+            // me.getActiveStory().header.body.setStyle('border-color','blue');
+            // me.getActiveStory().header.getEl().applyStyles('box-shadow: red');
+            // me.getActiveStory().header.getEl().applyStyles('border-color: red');
+            // me.getActiveStory().header.getEl().applyStyles('background-image: none');
+              /*var text = response.responseText;
+              var obj = Ext.decode(text);
+              me.storeObj.loadRawData(obj, false)*/
+          }
+      });
+    },
+
+    markRead: function(storyURL, story){
+      Ext.Ajax.request({
+          url: 'mark_read',
+          params: {
+            url: storyURL
+          },
+          success: function(response){
+            story.header.body.setStyle('background-color','#ccddf3');
+
+              /*var text = response.responseText;
+              var obj = Ext.decode(text);
+              me.storeObj.loadRawData(obj, false)*/
+          }
+      });
     },
 
     checkScrollEnd: function(){
@@ -73,6 +126,7 @@ Ext.define('BSBExt.view.MainViewport', {
 
     prevStory: function(){
       var storyCmp = Ext.getCmp("Story")
+
       var current = storyCmp.child("[collapsed=false]")
       storyCmp.items.items[storyCmp.items.items.indexOf(current) - 1].expand()
 
@@ -252,7 +306,29 @@ Ext.define('BSBExt.view.MainViewport', {
 
                 }
               }
-            }
+            },
+            {
+                    xtype: 'cycle',
+                    x: 0,
+                    y: 610,
+                    width: 80,
+                    height: 30,
+                    showText: true,
+                    menu: {
+                        xtype: 'menu',
+                        width: 60,
+                        items: [
+                            {
+                                xtype: 'menucheckitem',
+                                text: 'All',
+                            },
+                            {
+                                xtype: 'menucheckitem',
+                                text: 'New',
+                            }
+                        ]
+                    }
+                }
           ]
       });
 

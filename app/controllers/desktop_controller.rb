@@ -1,4 +1,5 @@
 class DesktopController < ApplicationController
+  before_filter :authenticate_user!
   def show
   end
 
@@ -64,5 +65,23 @@ class DesktopController < ApplicationController
       format.json { render :json => @reply_stories.to_json }
     end
     # @story = Story.all.sort_by(&:published).reverse[session[:all_index]]
+  end
+
+  def mark_read
+    @user = current_user
+    @story = Story.where("url = ?",params[:storyUrl])
+    @user.stories.delete(@story)
+    respond_to do |format|
+      format.json { render :json => {success: true} }
+    end
+  end
+
+  def mark_unread
+    @user = current_user
+    @story = Story.where("url = ?",params[:storyUrl])
+    @user.stories << @story
+    respond_to do |format|
+      format.json { render :json => {success: true} }
+    end
   end
 end

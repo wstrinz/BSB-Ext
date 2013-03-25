@@ -1,10 +1,15 @@
 BSB::Application.routes.draw do
+  devise_for :users
+
   get "desktop/show"
   get "desktop/get_feeds"
   get "desktop/get_stories"
   get "desktop/get_more_stories"
   get "desktop/get_all_stories"
   get "desktop/add_feed"
+
+  post "desktop/mark_unread"
+  post "desktop/mark_read"
 
   # The priority is based upon order of creation:
   # first created -> highest priority.
